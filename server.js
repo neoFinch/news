@@ -1,31 +1,18 @@
-// var init = require('./config/init')();
-// var config = require('./config/config');
-
-// var app = require('./config/express')();
-
-// app.listen(config.port);
-// console.log('Node server started on port ' + config.port + '.');
-
 var express = require("express");
 var app = express();
-// var routes = require("./routes/newsRoutes");
+var routes = require("./server/routes/newsRoutes");
 var request = require("request");
 var mongoose = require("mongoose");
-// var News = require("./models/newsModel");
-
+var newsModel = require("./server/models/newsModel");
+var newsController = require("./server/controllers/newsController");
 var bodyParser = require("body-parser");
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-// app.use(routes);
 mongoose.Promise = global.Promise;
 mongoose.connect("mongodb://localhost:27017/news");
 
 app.listen(3000);
 
-// app.get("/api/news", function(req, res) {
-//   //   console.log("called");
-// setInterval(function() {
-//   console.log("called");
 request.get(
   {
     url:
@@ -33,19 +20,28 @@ request.get(
   },
   function(error, response, body) {
     console.log(body)
-    // if (!error && response.statusCode == 200) {
-    //   var myData = new News(JSON.parse(body));
-    //   myData
-    //     .save()
-    //     .then(item => {
-    //       // res.send("item saved to database");
-    //       console.log("item : ", item);
-    //     })
-    //     .catch(err => {
-    //       // res.status(400).send("unable to save to database");
-    //     });
-    // }
+    if (!error && response.statusCode == 200) {
+      var data = JSON.parse(body);
+      data.articles.map(item => { 
+        var news = new newsModel({
+        title : item.title,
+        description : item.description,
+        image : item.urlToImage,
+        url : item.url,
+        content : item.content
+
+          });
+
+          news.save(function (err, res) {
+              if (err) {
+                  console.log('err', err)
+              }
+              console.log('res',res)
+          });
+      })
+     
+    }
   }
 );
-// }, 600000);
-// });
+
+app.use("/api/news",routes);
